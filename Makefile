@@ -6,3 +6,6 @@ image:
 
 shell: image
 	$(run) sh
+
+check: image
+	$(run) go test ./...
