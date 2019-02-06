@@ -2,7 +2,8 @@
 
 This is a simple single domain crawler.
 Given a URL it will crawl all pages within the domain name of the URL
-and print a simple site map, showing the links between pages.
+and send a [sitemap](https://www.sitemaps.org/protocol.html)
+in text format to the crawler stdout.
 
 
 # Dependencies
@@ -23,8 +24,6 @@ After building the crawler just run:
 ./cmd/crawler -url <url>
 ```
 
-The result of the crawling will be a
-[sitemap](https://www.sitemaps.org/protocol.html) in text format.
 
 For more options run:
 
