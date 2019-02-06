@@ -2,7 +2,8 @@
 
 This is a simple single domain crawler.
 Given a URL it will crawl all pages within the domain name of the URL
-and print a simple site map, showing the links between pages.
+and send a [sitemap](https://www.sitemaps.org/protocol.html)
+in text format to the crawler stdout.
 
 
 # Dependencies
@@ -14,17 +15,24 @@ Install:
 
 And you should be able to run any of the commands documented here.
 
+If you want to build and run tests directly in your host you
+must install [Go](https://golang.org/) >= 1.11.
+
 
 # Usage
 
 After building the crawler just run:
 
 ```
-./cmd/crawler -help
+./cmd/crawler -url <url>
 ```
 
-And follow the help =).
 
+For more options run:
+
+```
+./cmd/crawler -help
+```
 
 # Build
 
