@@ -20,11 +20,17 @@ And you should be able to run any of the commands documented here.
 After building the crawler just run:
 
 ```
-./cmd/crawler -help
+./cmd/crawler -url <url>
 ```
 
-And follow the help =).
+The result of the crawling will be a
+[sitemap](https://www.sitemaps.org/protocol.html) in text format.
 
+For more options run:
+
+```
+./cmd/crawler -help
+```
 
 # Build
 
