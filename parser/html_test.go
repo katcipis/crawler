@@ -1,8 +1,9 @@
 package parser_test
 
 import (
-	"bytes"
+	"errors"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/katcipis/crawler/parser"
@@ -99,7 +100,7 @@ func TestExtractLinks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			htmlReader := bytes.NewBufferString(c.html)
+			htmlReader := strings.NewReader(c.html)
 			gotURLs, err := parser.ExtractLinks(htmlReader)
 
 			if err != nil {
@@ -120,6 +121,19 @@ func TestExtractLinks(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestExtractLinksFailsOnReadError(t *testing.T) {
+	res, err := parser.ExtractLinks(&explodingReader{})
+	if err == nil {
+		t.Fatalf("expected error, instead got valid result: %v", res)
+	}
+}
+
+type explodingReader struct{}
+
+func (*explodingReader) Read([]byte) (int, error) {
+	return 0, errors.New("explodingReader error")
 }
 
 func urlsAsStrings(urls []url.URL) []string {

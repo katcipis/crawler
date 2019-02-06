@@ -2,6 +2,7 @@
 package parser
 
 import (
+	"fmt"
 	"io"
 	"net/url"
 
@@ -12,8 +13,12 @@ import (
 // from the given HTML body. If the content is not valid
 // HTML an error is returned instead.
 func ExtractLinks(htmlbody io.Reader) ([]url.URL, error) {
-	// TODO: handle err
-	doc, _ := html.Parse(htmlbody)
+	doc, err := html.Parse(htmlbody)
+
+	if err != nil {
+		return nil, fmt.Errorf("parser.ExtractLinks: %s", err)
+	}
+
 	urls := []url.URL{}
 
 	var visit func(n *html.Node)
