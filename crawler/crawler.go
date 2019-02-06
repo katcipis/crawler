@@ -2,9 +2,13 @@
 package crawler
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
+
+	"github.com/katcipis/crawler/parser"
 )
 
 // Result represents a single result found during the crawling process
@@ -13,6 +17,10 @@ type Result struct {
 	Link url.URL
 	// Parent is the URL used to reach the Link URL
 	Parent url.URL
+}
+
+func (r Result) String() string {
+	return fmt.Sprintf("%s->%s", r.Parent.String(), r.Link.String())
 }
 
 // Start will start N concurrent crawlers and return a channel
@@ -92,29 +100,68 @@ func crawler(
 	jobs <-chan url.URL,
 	timeout time.Duration,
 ) {
-	client := http.Client{Timeout: timeout}
+	client := &http.Client{Timeout: timeout}
 
 	for url := range jobs {
-		// TODO: do crawling
-		client.Get(url.String())
-		res <- nil
+		nextLinks := getLinks(client, url)
+		results := make([]Result, len(nextLinks))
+
+		for i, link := range nextLinks {
+			results[i] = Result{
+				Parent: url,
+				Link:   link,
+			}
+		}
+
+		res <- results
 	}
 }
 
+func getLinks(c *http.Client, u url.URL) []url.URL {
+	// TODO: improve error handling
+	res, err := c.Get(u.String())
+	if err != nil {
+		return nil
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil
+	}
+
+	links, _ := parser.ExtractLinks(res.Body)
+	absLinks := make([]url.URL, len(links))
+
+	for i, link := range links {
+		if link.Host == "" {
+			link.Host = u.Host
+		}
+		if link.Scheme == "" {
+			link.Scheme = u.Scheme
+		}
+		if !strings.HasPrefix(link.Path, "/") {
+			link.Path = u.Path + "/" + link.Path
+		}
+		absLinks[i] = link
+	}
+
+	return absLinks
+}
+
 func newUniquenessFilter() func([]url.URL) []url.URL {
-	knows := map[string]bool{}
+	seen := map[string]bool{}
 
-	return func(results []url.URL) []url.URL {
+	return func(urls []url.URL) []url.URL {
 		filtered := []url.URL{}
-		for _, res := range results {
-			u := res.String()
+		for _, u := range urls {
+			ustr := u.String()
 
-			if knows[u] {
+			if seen[ustr] {
 				continue
 			}
 
-			filtered = append(filtered, res)
-			knows[u] = true
+			filtered = append(filtered, u)
+			seen[ustr] = true
 		}
 		return filtered
 	}

@@ -20,22 +20,26 @@ func TestCrawler(t *testing.T) {
 	defer server.Close()
 
 	want := []crawler.Result{
-		result(entrypoint, "/", "/info.html"),
-		result(entrypoint, "/", "/nesting/info.html"),
+		result(entrypoint, "", "/info.html"),
+		result(entrypoint, "", "/nesting/info.html"),
+		result(entrypoint, "", "/dir"),
+		result(entrypoint, "", "/wontExist.html"),
+		result(entrypoint, "", "/wont/exist/page.html"),
+		result(entrypoint, "", "/wont/exist2"),
 		result(entrypoint, "/info.html", "/cycle.html"),
 		result(entrypoint, "/info.html", "/final.html"),
 		result(entrypoint, "/cycle.html", "/info.html"),
 		result(entrypoint, "/cycle.html", "/final.html"),
-		result(entrypoint, "/nesting/info.html", "cycle.html"),
-		result(entrypoint, "/nesting/info.html", "final.html"),
-		result(entrypoint, "", "/dir/page1.html"),
-		result(entrypoint, "", "/dir/page2.html"),
-		result(entrypoint, "", "/dir/page3.txt"),
+		result(entrypoint, "/nesting/info.html", "/cycle.html"),
+		result(entrypoint, "/nesting/info.html", "/final.html"),
+		result(entrypoint, "/dir", "/dir/page1.html"),
+		result(entrypoint, "/dir", "/dir/page2.html"),
+		result(entrypoint, "/dir", "/dir/page3.txt"),
 	}
 
-	const maxConcurrency uint = 10
+	const maxConcurrency uint = 1
 
-	for concurrency := uint(1); concurrency < maxConcurrency; concurrency++ {
+	for concurrency := uint(1); concurrency <= maxConcurrency; concurrency++ {
 		t.Run(fmt.Sprintf("Concurrency%d", concurrency), func(t *testing.T) {
 			testCrawler(t, entrypoint, concurrency, copyResults(want))
 		})
@@ -55,7 +59,13 @@ func testCrawler(
 
 	fatalerr(t, err, "starting crawler")
 
+	seen := map[string]bool{}
+
 	for got := range results {
+		if seen[got.String()] {
+			t.Fatalf("duplicated result[%s]", got)
+		}
+		seen[got.String()] = true
 		want = removeResult(t, want, got)
 	}
 
@@ -71,7 +81,7 @@ func removeResult(t *testing.T, want []crawler.Result, got crawler.Result) []cra
 		}
 	}
 
-	t.Fatalf("unable to find crawler result[%v] in wanted results[%v]", got, want)
+	t.Fatalf("unable to find crawler result:\n\n%+v\n\nin wanted results:\n\n%+v", got, want)
 	return want
 }
 
