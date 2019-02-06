@@ -9,3 +9,6 @@ shell: image
 
 check: image
 	$(run) go test ./...
+
+static-analysis: image
+	$(run) staticcheck ./...
