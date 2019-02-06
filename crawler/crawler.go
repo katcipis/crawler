@@ -2,6 +2,7 @@
 package crawler
 
 import (
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -77,6 +78,11 @@ func scheduler(
 			results := <-res
 			results = filterBySameDomain(results)
 			results = filterByUniqueness(results)
+
+			for _, res := range results {
+				filtered <- res
+			}
+
 			pendingURLs = append(pendingURLs, extractLinks(results)...)
 		}
 	}
@@ -87,8 +93,11 @@ func crawler(
 	jobs <-chan url.URL,
 	timeout time.Duration,
 ) {
-	for range jobs {
+	client := http.Client{Timeout: timeout}
+
+	for url := range jobs {
 		// TODO: do crawling
+		client.Get(url.String())
 		res <- nil
 	}
 }
@@ -125,6 +134,9 @@ func filterBySameDomain(results []Result) []Result {
 }
 
 func extractLinks(results []Result) []url.URL {
-	// TODO
-	return nil
+	links := make([]url.URL, len(results))
+	for i, res := range results {
+		links[i] = res.Link
+	}
+	return links
 }

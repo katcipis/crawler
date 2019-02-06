@@ -60,7 +60,7 @@ func testCrawler(
 	}
 
 	if len(want) > 0 {
-		t.Fatalf("missing wanted results: %v", want)
+		t.Fatalf("missing wanted results: %+v", want)
 	}
 }
 
