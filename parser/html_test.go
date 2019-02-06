@@ -17,6 +17,11 @@ func TestExtractLinks(t *testing.T) {
 
 	cases := []tcase{
 		{
+			name: "emptyContent",
+			html: "",
+			want: []string{},
+		},
+		{
 			name: "noLinks",
 			html: `<body></body>`,
 			want: []string{},
@@ -27,13 +32,27 @@ func TestExtractLinks(t *testing.T) {
 			want: []string{"/test"},
 		},
 		{
-			name: "multipleLinksOnRoot",
+			name: "multipleLinks",
 			html: `
 				<a href="/test1"></a>
 				<a href="/test2"></a>
 				<a href="/test3"></a>
 			`,
 			want: []string{"/test1", "/test2", "/test3"},
+		},
+		{
+			name: "linkWithSchemeAndDomain",
+			html: `
+				<a href="http://example.com"></a>
+			`,
+			want: []string{"http://example.com"},
+		},
+		{
+			name: "linkWithPort",
+			html: `
+				<a href="http://example.com:7777"></a>
+			`,
+			want: []string{"http://example.com:7777"},
 		},
 		{
 			name: "multipleNestedLinks",
