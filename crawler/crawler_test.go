@@ -11,7 +11,9 @@ import (
 	"github.com/katcipis/crawler/crawler"
 )
 
-// TODO: test crawling with no links (just entrypoint)
+// TODO:
+// 1 - entry point answers 200 OK no body
+// 2 - entry point answers 500 ERROR
 
 func TestCrawler(t *testing.T) {
 	server, entrypoint := setupServer(t, "./testdata/fakesite")

@@ -45,11 +45,12 @@ func scheduler(
 	concurrency uint,
 	timeout time.Duration,
 ) {
-	res := make(chan []Result, concurrency)
-	jobs := make(chan url.URL, concurrency)
-
-	defer close(res)
 	defer close(filtered)
+
+	res := make(chan []Result, concurrency)
+	defer close(res)
+
+	jobs := make(chan url.URL)
 	defer close(jobs)
 
 	for i := uint(0); i < concurrency; i++ {
