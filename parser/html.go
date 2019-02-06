@@ -20,8 +20,10 @@ func ExtractLinks(htmlbody io.Reader) ([]url.URL, error) {
 
 	visit = func(n *html.Node) {
 		if isLink(n) {
-			extractedURL := extractURL(n)
-			urls = append(urls, extractedURL)
+			extractedURL, ok := extractURL(n)
+			if ok {
+				urls = append(urls, extractedURL)
+			}
 		}
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			visit(c)
@@ -33,17 +35,16 @@ func ExtractLinks(htmlbody io.Reader) ([]url.URL, error) {
 	return urls, nil
 }
 
-func extractURL(linkNode *html.Node) url.URL {
+func extractURL(linkNode *html.Node) (url.URL, bool) {
 	for _, attr := range linkNode.Attr {
 		if attr.Key == "href" {
 			// TODO: error handling
 			u, _ := url.Parse(attr.Val)
-			return *u
+			return *u, true
 		}
 	}
 
-	// TODO: error handling
-	return url.URL{}
+	return url.URL{}, false
 }
 
 func isLink(n *html.Node) bool {

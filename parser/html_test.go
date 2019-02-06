@@ -41,6 +41,15 @@ func TestExtractLinks(t *testing.T) {
 			want: []string{"/test1", "/test2", "/test3"},
 		},
 		{
+			name: "ignoresLinksWithoutHref",
+			html: `
+				<a href="/test1"></a>
+				<a nothref="/test2"></a>
+				<a href="/test3"></a>
+			`,
+			want: []string{"/test1", "/test3"},
+		},
+		{
 			name: "linkWithSchemeAndDomain",
 			html: `
 				<a href="http://example.com"></a>
