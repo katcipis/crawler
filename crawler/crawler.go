@@ -33,5 +33,7 @@ func Start(
 	concurrency uint,
 	timeout time.Duration,
 ) (<-chan Result, error) {
-	return nil, nil
+	res := make(chan Result)
+	close(res)
+	return res, nil
 }
