@@ -1,5 +1,5 @@
 img=katcipis/crawler
-run=docker run -ti -v `pwd`:/app $(img)
+run=docker run --rm -ti -v `pwd`:/app $(img)
 
 image:
 	docker build . -t $(img)
@@ -9,3 +9,6 @@ shell: image
 
 check: image
 	$(run) go test ./...
+
+static-analysis: image
+	$(run) golangci-lint run ./...
