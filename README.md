@@ -65,18 +65,11 @@ make check-integration
 
 # Coverage
 
-To generate the coverage report:
+To generate and view the coverage report:
 
 ```
 make coverage
 ```
-
-To generate and view it in your browser:
-
-```
-make coverage-view
-```
-
 
 # Static Analysis
 
