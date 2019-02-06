@@ -17,14 +17,44 @@ func TestExtractLinks(t *testing.T) {
 
 	cases := []tcase{
 		{
+			name: "noLinks",
+			html: `<body></body>`,
+			want: []string{},
+		},
+		{
 			name: "oneLink",
 			html: `<a href="/test"></a>`,
 			want: []string{"/test"},
 		},
 		{
 			name: "multipleLinksOnRoot",
-			html: `<a href="/test"></a>`,
-			want: []string{"/test"},
+			html: `
+				<a href="/test1"></a>
+				<a href="/test2"></a>
+				<a href="/test3"></a>
+			`,
+			want: []string{"/test1", "/test2", "/test3"},
+		},
+		{
+			name: "multipleNestedLinks",
+			html: `
+				<body>
+					<p>
+						<a href="http://coding.is.fun/test1"></a>
+					</p>
+					<a href="https://coding.is.fun/test2"></a>
+					<h1>
+						<a href="ftp://coding.is.fun/test3"></a>
+					</h1>
+					<a href="http://coding.is.fun"></a>
+				</body>
+			`,
+			want: []string{
+				"http://coding.is.fun/test1",
+				"https://coding.is.fun/test2",
+				"ftp://coding.is.fun/test3",
+				"http://coding.is.fun",
+			},
 		},
 	}
 
