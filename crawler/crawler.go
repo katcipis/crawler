@@ -75,8 +75,8 @@ func scheduler(
 		pendingURLs = nil
 		for i := 0; i < jobsSent; i++ {
 			results := <-res
+			results = filterBySameDomain(results)
 			results = filterByUniqueness(results)
-			results = filterByDomain(results, entrypoint.Host)
 			pendingURLs = append(pendingURLs, extractLinks(results)...)
 		}
 	}
@@ -94,15 +94,34 @@ func crawler(
 }
 
 func newUniquenessFilter() func([]Result) []Result {
-	// TODO
+	knows := map[string]bool{}
+
 	return func(results []Result) []Result {
-		return results
+		filtered := []Result{}
+		for _, res := range results {
+			urlpair := res.Parent.String() + res.Link.String()
+
+			if knows[urlpair] {
+				continue
+			}
+
+			filtered = append(filtered, res)
+			knows[urlpair] = true
+		}
+		return filtered
 	}
 }
 
-func filterByDomain(results []Result, domain string) []Result {
-	// TODO
-	return results
+func filterBySameDomain(results []Result) []Result {
+	filtered := []Result{}
+
+	for _, res := range results {
+		if res.Link.Host == res.Parent.Host {
+			filtered = append(filtered, res)
+		}
+	}
+
+	return filtered
 }
 
 func extractLinks(results []Result) []url.URL {
