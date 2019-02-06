@@ -37,7 +37,7 @@ func TestCrawler(t *testing.T) {
 		result(entrypoint, "/dir", "/dir/page3.txt"),
 	}
 
-	const maxConcurrency uint = 1
+	const maxConcurrency uint = 10
 
 	for concurrency := uint(1); concurrency <= maxConcurrency; concurrency++ {
 		t.Run(fmt.Sprintf("Concurrency%d", concurrency), func(t *testing.T) {
