@@ -75,15 +75,14 @@ func scheduler(
 
 		pendingURLs = nil
 		for i := 0; i < jobsSent; i++ {
-			results := <-res
-			results = filterBySameDomain(results)
-			results = filterByUniqueness(results)
+			results := filterBySameDomain(<-res)
 
 			for _, res := range results {
 				filtered <- res
 			}
 
-			pendingURLs = append(pendingURLs, extractLinks(results)...)
+			pendingURLs = append(pendingURLs,
+				filterByUniqueness(extractLinks(results))...)
 		}
 	}
 }
@@ -102,20 +101,20 @@ func crawler(
 	}
 }
 
-func newUniquenessFilter() func([]Result) []Result {
+func newUniquenessFilter() func([]url.URL) []url.URL {
 	knows := map[string]bool{}
 
-	return func(results []Result) []Result {
-		filtered := []Result{}
+	return func(results []url.URL) []url.URL {
+		filtered := []url.URL{}
 		for _, res := range results {
-			urlpair := res.Parent.String() + res.Link.String()
+			u := res.String()
 
-			if knows[urlpair] {
+			if knows[u] {
 				continue
 			}
 
 			filtered = append(filtered, res)
-			knows[urlpair] = true
+			knows[u] = true
 		}
 		return filtered
 	}
