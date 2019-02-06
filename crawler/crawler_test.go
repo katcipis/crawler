@@ -11,6 +11,8 @@ import (
 	"github.com/katcipis/crawler/crawler"
 )
 
+// TODO: test crawling with no links (just entrypoint)
+
 func TestCrawler(t *testing.T) {
 	server, entrypoint := setupServer(t, "./testdata/fakesite")
 	defer server.Close()

@@ -14,7 +14,7 @@ type Result struct {
 	Parent url.URL
 }
 
-// Start will start a concurrent crawler and return a channel
+// Start will start N concurrent crawlers and return a channel
 // where all results from the crawling can be received.
 //
 // The concurrency parameter controls how much concurrent
@@ -33,7 +33,78 @@ func Start(
 	concurrency uint,
 	timeout time.Duration,
 ) (<-chan Result, error) {
-	res := make(chan Result)
-	close(res)
+	// TODO: validate concurrency > 0
+	res := make(chan Result, concurrency)
+	go scheduler(res, entrypoint, concurrency, timeout)
 	return res, nil
+}
+
+func scheduler(
+	filtered chan<- Result,
+	entrypoint url.URL,
+	concurrency uint,
+	timeout time.Duration,
+) {
+	res := make(chan []Result, concurrency)
+	jobs := make(chan url.URL, concurrency)
+
+	defer close(res)
+	defer close(filtered)
+	defer close(jobs)
+
+	for i := uint(0); i < concurrency; i++ {
+		go crawler(res, jobs, timeout)
+	}
+
+	pendingURLs := []url.URL{entrypoint}
+	filterByUniqueness := newUniquenessFilter()
+
+	for len(pendingURLs) > 0 {
+		// WHY: avoid deadlock between sending jobs to crawlers
+		// and crawlers sending results back.
+		jobsToSend := pendingURLs
+		jobsSent := len(jobsToSend)
+
+		go func() {
+			for _, job := range jobsToSend {
+				jobs <- job
+			}
+		}()
+
+		pendingURLs = nil
+		for i := 0; i < jobsSent; i++ {
+			results := <-res
+			results = filterByUniqueness(results)
+			results = filterByDomain(results, entrypoint.Host)
+			pendingURLs = append(pendingURLs, extractLinks(results)...)
+		}
+	}
+}
+
+func crawler(
+	res chan<- []Result,
+	jobs <-chan url.URL,
+	timeout time.Duration,
+) {
+	for range jobs {
+		// TODO: do crawling
+		res <- nil
+	}
+}
+
+func newUniquenessFilter() func([]Result) []Result {
+	// TODO
+	return func(results []Result) []Result {
+		return results
+	}
+}
+
+func filterByDomain(results []Result, domain string) []Result {
+	// TODO
+	return results
+}
+
+func extractLinks(results []Result) []url.URL {
+	// TODO
+	return nil
 }
