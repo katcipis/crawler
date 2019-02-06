@@ -38,8 +38,10 @@ func ExtractLinks(htmlbody io.Reader) ([]url.URL, error) {
 func extractURL(linkNode *html.Node) (url.URL, bool) {
 	for _, attr := range linkNode.Attr {
 		if attr.Key == "href" {
-			// TODO: error handling
-			u, _ := url.Parse(attr.Val)
+			u, err := url.Parse(attr.Val)
+			if err != nil {
+				return url.URL{}, false
+			}
 			return *u, true
 		}
 	}
