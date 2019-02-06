@@ -8,10 +8,10 @@ import (
 	"golang.org/x/net/html"
 )
 
-// ExtractURLs will return a list of URLs extracted
+// ExtractLinks will return a list of links extracted
 // from the given HTML body. If the content is not valid
-// HTML an error is returned.
-func ExtractURLs(htmlbody io.Reader) ([]url.URL, error) {
+// HTML an error is returned instead.
+func ExtractLinks(htmlbody io.Reader) ([]url.URL, error) {
 	// TODO: handle err
 	doc, _ := html.Parse(htmlbody)
 	urls := []url.URL{}

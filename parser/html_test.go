@@ -8,7 +8,7 @@ import (
 	"github.com/katcipis/crawler/parser"
 )
 
-func TestParseURLs(t *testing.T) {
+func TestExtractLinks(t *testing.T) {
 	type tcase struct {
 		name string
 		html string
@@ -17,7 +17,12 @@ func TestParseURLs(t *testing.T) {
 
 	cases := []tcase{
 		{
-			name: "oneURL",
+			name: "oneLink",
+			html: `<a href="/test"></a>`,
+			want: []string{"/test"},
+		},
+		{
+			name: "multipleLinksOnRoot",
 			html: `<a href="/test"></a>`,
 			want: []string{"/test"},
 		},
@@ -26,7 +31,7 @@ func TestParseURLs(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			htmlReader := bytes.NewBufferString(c.html)
-			gotURLs, err := parser.ExtractURLs(htmlReader)
+			gotURLs, err := parser.ExtractLinks(htmlReader)
 
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)

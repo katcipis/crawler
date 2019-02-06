@@ -15,8 +15,8 @@ Install:
 
 And you should be able to run any of the commands documented here.
 
-If you want to build and run tests directly inside your host you
-must install Go >= 1.11.
+If you want to build and run tests directly in your host you
+must install [Go](https://golang.org/) >= 1.11.
 
 
 # Usage
