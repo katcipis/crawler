@@ -12,11 +12,10 @@ import (
 )
 
 // TODO:
-// 1 - entry point answers 200 OK no body
-// 2 - entry point answers 500 ERROR
+// 1 - entry point answers 500 ERROR
 
-func TestCrawler(t *testing.T) {
-	server, entrypoint := setupServer(t, "./testdata/fakesite")
+func TestCrawlingMultipleLinks(t *testing.T) {
+	server, entrypoint := setupFileServer(t, "./testdata/fakesite")
 	defer server.Close()
 
 	want := []crawler.Result{
@@ -44,6 +43,15 @@ func TestCrawler(t *testing.T) {
 			testCrawler(t, entrypoint, concurrency, copyResults(want))
 		})
 	}
+}
+
+func TestCrawlingEmptySite(t *testing.T) {
+	server, entrypoint := setupFileServer(t, "./testdata/emptysite")
+	defer server.Close()
+
+	const concurrency = 5
+
+	testCrawler(t, entrypoint, concurrency, []crawler.Result{})
 }
 
 func testCrawler(
@@ -106,7 +114,7 @@ func result(entrypoint url.URL, parent string, link string) crawler.Result {
 	}
 }
 
-func setupServer(t *testing.T, dir string) (*httptest.Server, url.URL) {
+func setupFileServer(t *testing.T, dir string) (*httptest.Server, url.URL) {
 	handler := http.FileServer(http.Dir(dir))
 	server := httptest.NewServer(handler)
 	url, err := url.Parse(server.URL)
