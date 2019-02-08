@@ -154,8 +154,10 @@ func crawler(
 }
 
 func getLinks(ctx context.Context, c *http.Client, u url.URL) ([]url.URL, error) {
-	req, _ := http.NewRequest("GET", u.String(), nil)
-	// TODO: test error
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable create GET request for url[%s]: %s", u.String(), err)
+	}
 
 	req = req.WithContext(ctx)
 	res, err := c.Do(req)
