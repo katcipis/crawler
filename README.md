@@ -26,7 +26,7 @@ If you have Go >= 1.11 installed you can run:
 go get github.com/katcipis/crawler/cmd/crawler
 ```
 
-# Usage
+# Basic Usage
 
 After building the crawler just run:
 
@@ -40,6 +40,37 @@ For more options run:
 ```
 ./cmd/crawler/crawler -help
 ```
+
+There is a make target that makes it easy to visualize the sitemap
+as a graph. To use it just run:
+
+```
+make graph url=<entrypoint>
+```
+
+And it will generate a PNG file with the graphical representation
+of the sitemap and open it using the default application in your
+system to display images.
+
+
+# Sitemap Formatters
+
+There are multiple formats to represent a sitemap. The default
+sitemap specification does not show the relation between links.
+
+To make that easier to check there is two extra outputs besides
+the default textual sitemap:
+
+* linked
+* graphviz
+
+The **linked** formatter is pretty much like a sitemap with the
+exception that is shows pairs of URLs showing from where a URL
+has been reached.
+
+The **graphviz** formatter will produce an graphviz file with
+the full graph of the site which can be used to generate
+a graphical representation of the sitemap.
 
 # Build
 
