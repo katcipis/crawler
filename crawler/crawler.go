@@ -154,12 +154,20 @@ func getLinks(c *http.Client, u url.URL) ([]url.URL, error) {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error status code[%d] on GET url[%s]", res.StatusCode, u.String())
+		return nil, fmt.Errorf(
+			"error status code[%d] on GET url[%s]",
+			res.StatusCode,
+			u.String())
 	}
 
+	//WHY: The web is a fierce jungle, it seems better to not trust
+	//     HTTP headers and just try to parse the body searching for links
 	links, err := parser.ExtractLinks(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response body from GET url[%s]: %s", u.String(), err)
+		return nil, fmt.Errorf(
+			"error parsing response body from GET url[%s]: %s",
+			u.String(),
+			err)
 	}
 
 	absLinks := make([]url.URL, len(links))
