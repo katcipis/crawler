@@ -45,6 +45,7 @@ func TestCrawlingMultipleLinks(t *testing.T) {
 		t.Run(fmt.Sprintf("Concurrency%d", concurrency), func(t *testing.T) {
 			testCrawler(
 				t,
+				context.Background(),
 				entrypoint,
 				concurrency,
 				timeout,
@@ -62,6 +63,7 @@ func TestCrawlingUnreachableSite(t *testing.T) {
 
 	testCrawler(
 		t,
+		context.Background(),
 		url.URL{
 			Scheme: "http",
 			Host:   "unreachable.com.io.it",
@@ -83,6 +85,7 @@ func TestCrawlingEmptySite(t *testing.T) {
 
 	testCrawler(
 		t,
+		context.Background(),
 		entrypoint,
 		concurrency,
 		timeout,
@@ -101,6 +104,29 @@ func TestCrawlingRespectsPerRequestTimeout(t *testing.T) {
 
 	testCrawler(
 		t,
+		context.Background(),
+		entrypoint,
+		concurrency,
+		timeout,
+		[]crawler.Result{},
+		wantCrawlingErrs,
+	)
+}
+
+func TestCrawlingRespectsCancellation(t *testing.T) {
+	entrypoint, teardown := setupHangingServer(t, time.Hour)
+	defer teardown()
+
+	const concurrency = 5
+	const wantCrawlingErrs = 1
+	const timeout = time.Hour
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+
+	testCrawler(
+		t,
+		ctx,
 		entrypoint,
 		concurrency,
 		timeout,
@@ -113,7 +139,7 @@ func TestCrawlerFailsToStartIfConcurrencyIsZero(t *testing.T) {
 	entrypoint, teardown := setupFileServer(t, "./testdata/emptysite")
 	defer teardown()
 
-	res, errs := crawler.Start(entrypoint, 0, time.Minute)
+	res, errs := crawler.Start(context.Background(), entrypoint, 0, time.Minute)
 
 	err := <-errs
 	if err == nil {
@@ -135,6 +161,7 @@ func TestCrawlerFailsToStartIfConcurrencyIsZero(t *testing.T) {
 
 func testCrawler(
 	t *testing.T,
+	ctx context.Context,
 	entrypoint url.URL,
 	concurrency uint,
 	timeout time.Duration,
@@ -143,7 +170,7 @@ func testCrawler(
 ) {
 	t.Helper()
 
-	results, errs := crawler.Start(entrypoint, concurrency, timeout)
+	results, errs := crawler.Start(ctx, entrypoint, concurrency, timeout)
 
 	drainedErrs := make(chan struct{})
 	errsCount := uint(0)

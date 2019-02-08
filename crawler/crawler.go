@@ -2,6 +2,7 @@
 package crawler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -38,7 +39,11 @@ func (r Result) String() string {
 // Both the result and the errors channels must be drained.
 // If the caller reads only from the results channel the crawlers
 // may become blocked writing errors.
+//
+// All channels will be closed by the crawler when there is no more
+// URLs to crawl or the provided context expires.
 func Start(
+	ctx context.Context,
 	entrypoint url.URL,
 	concurrency uint,
 	timeout time.Duration,
