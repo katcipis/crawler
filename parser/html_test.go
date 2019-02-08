@@ -23,6 +23,11 @@ func TestExtractLinks(t *testing.T) {
 			want: []string{},
 		},
 		{
+			name: "emptyLink",
+			html: `<a href=""></a>`,
+			want: []string{},
+		},
+		{
 			name: "noLinks",
 			html: `<body></body>`,
 			want: []string{},
