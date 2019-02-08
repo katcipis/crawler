@@ -87,11 +87,14 @@ func scheduler(
 	}
 
 	pendingURLs := []url.URL{entrypoint}
-	filterByUniqueness := newUniquenessFilter()
+	pendingJobs := 0
+	filterByUniqueness := newUniquenessFilter(entrypoint)
 
-	for len(pendingURLs) > 0 {
-		jobsToSend := filterByUniqueness(pendingURLs)
-		jobsSent := len(jobsToSend)
+	for len(pendingURLs) > 0 || pendingJobs > 0 {
+
+		jobsToSend := pendingURLs
+		pendingJobs += len(jobsToSend)
+		pendingURLs = nil
 
 		go func() {
 			// WHY: create goroutine to avoid deadlock between
@@ -102,17 +105,15 @@ func scheduler(
 			}
 		}()
 
-		pendingURLs = nil
-		for i := 0; i < jobsSent; i++ {
-			results := filterBySameDomain(<-crawlResults)
-			results = filterSelfReferences(results)
+		results := filterBySameDomain(<-crawlResults)
+		results = filterSelfReferences(results)
+		pendingJobs -= 1
 
-			for _, res := range results {
-				filtered <- res
-			}
-
-			pendingURLs = append(pendingURLs, extractLinks(results)...)
+		for _, res := range results {
+			filtered <- res
 		}
+
+		pendingURLs = filterByUniqueness(extractLinks(results))
 	}
 }
 
@@ -211,8 +212,10 @@ func makeLinkAbsolute(parent url.URL, link url.URL) url.URL {
 	return link
 }
 
-func newUniquenessFilter() func([]url.URL) []url.URL {
-	seen := map[string]bool{}
+func newUniquenessFilter(entrypoint url.URL) func([]url.URL) []url.URL {
+	seen := map[string]bool{
+		entrypoint.String(): true,
+	}
 
 	return func(urls []url.URL) []url.URL {
 		filtered := []url.URL{}

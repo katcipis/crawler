@@ -12,9 +12,6 @@ import (
 	"github.com/katcipis/crawler/crawler"
 )
 
-// TODO:
-// 1 - entry point answers 500 ERROR
-
 func TestCrawlingMultipleLinks(t *testing.T) {
 	entrypoint, teardown := setupFileServer(t, "./testdata/fakesite")
 	defer teardown()

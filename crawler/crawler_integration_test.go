@@ -61,9 +61,9 @@ func TestCrawlingWebsites(t *testing.T) {
 
 		linksCount := 0
 		for res := range results {
-			checkRepeated(res)
 			checkDomain(res.Parent)
 			checkDomain(res.Link)
+			checkRepeated(res)
 			linksCount += 1
 		}
 
