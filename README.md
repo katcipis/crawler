@@ -18,20 +18,27 @@ And you should be able to run any of the commands documented here.
 If you want to build and run tests directly in your host you
 must install [Go](https://golang.org/) >= 1.11.
 
+# Installation
+
+If you have Go >= 1.11 installed you can run:
+
+```
+go get github.com/katcipis/crawler/cmd/crawler
+```
 
 # Usage
 
 After building the crawler just run:
 
 ```
-./cmd/crawler -url <url>
+./cmd/crawler/crawler -url <url>
 ```
 
 
 For more options run:
 
 ```
-./cmd/crawler -help
+./cmd/crawler/crawler -help
 ```
 
 # Build
