@@ -61,12 +61,13 @@ func Start(
 		return res, errs
 	}
 
-	go scheduler(res, errs, entrypoint, concurrency, timeout)
+	go scheduler(ctx, res, errs, entrypoint, concurrency, timeout)
 
 	return res, errs
 }
 
 func scheduler(
+	ctx context.Context,
 	filtered chan<- Result,
 	errs chan<- error,
 	entrypoint url.URL,
@@ -83,7 +84,7 @@ func scheduler(
 	defer close(jobs)
 
 	for i := uint(0); i < concurrency; i++ {
-		go crawler(jobs, timeout, crawlResults, errs)
+		go crawler(ctx, jobs, timeout, crawlResults, errs)
 	}
 
 	pendingURLs := []url.URL{entrypoint}
@@ -122,6 +123,7 @@ func scheduler(
 // expect N results. The errs channel will be used a side band of informational
 // errors about the crawling process and should be drained.
 func crawler(
+	ctx context.Context,
 	jobs <-chan url.URL,
 	timeout time.Duration,
 	res chan<- []Result,
@@ -130,7 +132,7 @@ func crawler(
 	client := &http.Client{Timeout: timeout}
 
 	for url := range jobs {
-		nextLinks, err := getLinks(client, url)
+		nextLinks, err := getLinks(ctx, client, url)
 
 		if err != nil {
 			errs <- err
@@ -151,8 +153,12 @@ func crawler(
 	}
 }
 
-func getLinks(c *http.Client, u url.URL) ([]url.URL, error) {
-	res, err := c.Get(u.String())
+func getLinks(ctx context.Context, c *http.Client, u url.URL) ([]url.URL, error) {
+	req, _ := http.NewRequest("GET", u.String(), nil)
+	// TODO: test error
+
+	req = req.WithContext(ctx)
+	res, err := c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to GET url[%s]: %s", u.String(), err)
 	}
