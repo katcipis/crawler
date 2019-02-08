@@ -60,10 +60,24 @@ func TestCrawlerFailsToStartIfConcurrencyIsZero(t *testing.T) {
 	server, entrypoint := setupFileServer(t, "./testdata/emptysite")
 	defer server.Close()
 
-	_, err := crawler.Start(entrypoint, 0, time.Minute)
+	res, errs := crawler.Start(entrypoint, 0, time.Minute)
+
+	err := <-errs
 	if err == nil {
 		t.Fatal("expected error")
 	}
+
+	_, okRes := <-res
+	_, okErrs := <-errs
+
+	if okRes {
+		t.Error("expected results channel to be closed")
+	}
+
+	if okErrs {
+		t.Error("expected errs channel to be closed")
+	}
+
 }
 
 func testCrawler(
