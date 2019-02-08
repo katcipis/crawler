@@ -1,6 +1,9 @@
 package crawler
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 // Formatter is a function that given a channel of crawling results
 // will write the results to the given writer according to a specific format
@@ -40,9 +43,15 @@ func FormatAsTextSitemap(res <-chan Result, w io.Writer) error {
 	}
 
 	for r := range res {
-		// TODO check write error
-		write(r.Parent.String())
-		write(r.Link.String())
+		err := write(r.Parent.String())
+		if err != nil {
+			return fmt.Errorf("text sitemap formatter: failed to write result: %s", err)
+		}
+
+		err = write(r.Link.String())
+		if err != nil {
+			return fmt.Errorf("text sitemap formatter: failed to write result: %s", err)
+		}
 	}
 
 	return nil

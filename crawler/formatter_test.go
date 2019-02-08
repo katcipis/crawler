@@ -2,6 +2,7 @@ package crawler_test
 
 import (
 	"bytes"
+	"errors"
 	"net/url"
 	"testing"
 
@@ -57,6 +58,47 @@ func TestTextSitemapFormatter(t *testing.T) {
 	}
 }
 
+func TestOnWriteErrorFormatterFails(t *testing.T) {
+	type tcase struct {
+		name   string
+		format crawler.Formatter
+	}
+
+	cases := []tcase{
+		{
+			name:   "TextSitemap",
+			format: crawler.FormatAsTextSitemap,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			res := make(chan crawler.Result)
+			resCount := 2
+			go func() {
+				for i := 0; i < resCount; i++ {
+					res <- crawler.Result{
+						Parent: url.URL{
+							Scheme: "http",
+							Host:   "fail.com",
+						},
+					}
+				}
+				close(res)
+			}()
+			err := c.format(res, &explodingWriter{failOnCall: 1})
+			if err == nil {
+				t.Fatal("expected error on failed first write")
+			}
+
+			err = c.format(res, &explodingWriter{failOnCall: 2})
+			if err == nil {
+				t.Fatal("expected error on failed second write")
+			}
+		})
+	}
+}
+
 func testFormatter(t *testing.T, c FormatterTestCase, format crawler.Formatter) {
 	t.Run(c.name, func(t *testing.T) {
 		res := make(chan crawler.Result)
@@ -79,4 +121,17 @@ func testFormatter(t *testing.T, c FormatterTestCase, format crawler.Formatter) 
 			t.Fatalf("want:[%s] != got[%s]", c.want, got)
 		}
 	})
+}
+
+type explodingWriter struct {
+	call       int
+	failOnCall int
+}
+
+func (w *explodingWriter) Write(d []byte) (int, error) {
+	w.call += 1
+	if w.call == w.failOnCall {
+		return 0, errors.New("exploding writer exploding !!")
+	}
+	return len(d), nil
 }
