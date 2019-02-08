@@ -119,6 +119,14 @@ To run the tests:
 make check
 ```
 
+There is also some integration tests that helps to check some
+properties of the crawler while integrating with real live
+websites, but they are not deterministic:
+
+```
+make check-integration
+```
+
 # Coverage
 
 To generate and view the coverage report:
