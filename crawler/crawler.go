@@ -2,6 +2,7 @@
 package crawler
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -42,7 +43,11 @@ func Start(
 	concurrency uint,
 	timeout time.Duration,
 ) (<-chan Result, error) {
-	// TODO: validate concurrency > 0
+
+	if concurrency == 0 {
+		return nil, errors.New("concurrency level must be greater than zero")
+	}
+
 	res := make(chan Result, concurrency)
 	go scheduler(res, entrypoint, concurrency, timeout)
 	return res, nil

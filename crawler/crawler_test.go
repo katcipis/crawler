@@ -54,6 +54,16 @@ func TestCrawlingEmptySite(t *testing.T) {
 	testCrawler(t, entrypoint, concurrency, []crawler.Result{})
 }
 
+func TestCrawlerFailsToStartIfConcurrencyIsZero(t *testing.T) {
+	server, entrypoint := setupFileServer(t, "./testdata/emptysite")
+	defer server.Close()
+
+	_, err := crawler.Start(entrypoint, 0, time.Minute)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func testCrawler(
 	t *testing.T,
 	entrypoint url.URL,
