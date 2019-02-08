@@ -35,52 +35,63 @@ func (r Result) String() string {
 // The crawler will only follow links from the same domain
 // of the provided entry point URL.
 //
-// If the given entry point URL does not exist or any parameter
-// is invalid it will return a nil channel and a non nil error
-// with further details.
+// Both the result and the errors channels must be drained.
+// If the caller reads only from the results channel the crawlers
+// may become blocked writing errors.
 func Start(
 	entrypoint url.URL,
 	concurrency uint,
 	timeout time.Duration,
-) (<-chan Result, error) {
+) (<-chan Result, <-chan error) {
+
+	res := make(chan Result)
+	errs := make(chan error)
 
 	if concurrency == 0 {
-		return nil, errors.New("concurrency level must be greater than zero")
+		go func() {
+			errs <- errors.New("concurrency level must be greater than zero")
+			close(errs)
+			close(res)
+		}()
+		return res, errs
 	}
 
-	res := make(chan Result, concurrency)
-	go scheduler(res, entrypoint, concurrency, timeout)
-	return res, nil
+	go scheduler(res, errs, entrypoint, concurrency, timeout)
+
+	return res, errs
 }
 
 func scheduler(
 	filtered chan<- Result,
+	errs chan<- error,
 	entrypoint url.URL,
 	concurrency uint,
 	timeout time.Duration,
 ) {
 	defer close(filtered)
+	defer close(errs)
 
-	res := make(chan []Result, concurrency)
-	defer close(res)
+	crawlResults := make(chan []Result)
+	defer close(crawlResults)
 
 	jobs := make(chan url.URL)
 	defer close(jobs)
 
 	for i := uint(0); i < concurrency; i++ {
-		go crawler(res, jobs, timeout)
+		go crawler(crawlResults, errs, jobs, timeout)
 	}
 
 	pendingURLs := []url.URL{entrypoint}
 	filterByUniqueness := newUniquenessFilter()
 
 	for len(pendingURLs) > 0 {
-		// WHY: avoid deadlock between sending jobs to crawlers
-		// and crawlers sending results back.
 		jobsToSend := pendingURLs
 		jobsSent := len(jobsToSend)
 
 		go func() {
+			// WHY: create goroutine to avoid deadlock between
+			// sending jobs to crawlers
+			// and crawlers sending results back.
 			for _, job := range jobsToSend {
 				jobs <- job
 			}
@@ -88,7 +99,7 @@ func scheduler(
 
 		pendingURLs = nil
 		for i := 0; i < jobsSent; i++ {
-			results := filterBySameDomain(<-res)
+			results := filterBySameDomain(<-crawlResults)
 
 			for _, res := range results {
 				filtered <- res
@@ -102,6 +113,7 @@ func scheduler(
 
 func crawler(
 	res chan<- []Result,
+	errs chan<- error,
 	jobs <-chan url.URL,
 	timeout time.Duration,
 ) {

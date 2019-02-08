@@ -73,12 +73,19 @@ func testCrawler(
 	t.Helper()
 
 	timeout := time.Minute
-	results, err := crawler.Start(entrypoint, concurrency, timeout)
+	results, errs := crawler.Start(entrypoint, concurrency, timeout)
 
-	fatalerr(t, err, "starting crawler")
+	drainedErrs := make(chan struct{})
+	errsCount := 0
+
+	go func() {
+		for range errs {
+			errsCount += 1
+		}
+		close(drainedErrs)
+	}()
 
 	seen := map[string]bool{}
-
 	for got := range results {
 		if seen[got.String()] {
 			t.Fatalf("duplicated result[%s]", got)
@@ -90,6 +97,9 @@ func testCrawler(
 	if len(want) > 0 {
 		t.Fatalf("missing wanted results: %+v", want)
 	}
+
+	<-drainedErrs
+	// TODO: check errsCount
 }
 
 func removeResult(t *testing.T, want []crawler.Result, got crawler.Result) []crawler.Result {
