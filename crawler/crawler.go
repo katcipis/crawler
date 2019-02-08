@@ -78,7 +78,7 @@ func scheduler(
 	defer close(jobs)
 
 	for i := uint(0); i < concurrency; i++ {
-		go crawler(crawlResults, errs, jobs, timeout)
+		go crawler(jobs, timeout, crawlResults, errs)
 	}
 
 	pendingURLs := []url.URL{entrypoint}
@@ -111,16 +111,28 @@ func scheduler(
 	}
 }
 
+// crawler will write one set (possibly empty) of results for each
+// job it reads from the jobs channel. Even on errors a empty results will
+// be written, so the caller can trust that after writing N jobs it can
+// expect N results. The errs channel will be used a side band of informational
+// errors about the crawling process and should be drained.
 func crawler(
-	res chan<- []Result,
-	errs chan<- error,
 	jobs <-chan url.URL,
 	timeout time.Duration,
+	res chan<- []Result,
+	errs chan<- error,
 ) {
 	client := &http.Client{Timeout: timeout}
 
 	for url := range jobs {
-		nextLinks := getLinks(client, url)
+		nextLinks, err := getLinks(client, url)
+
+		if err != nil {
+			errs <- err
+			res <- nil
+			continue
+		}
+
 		results := make([]Result, len(nextLinks))
 
 		for i, link := range nextLinks {
@@ -134,19 +146,22 @@ func crawler(
 	}
 }
 
-func getLinks(c *http.Client, u url.URL) []url.URL {
-	// TODO: improve error handling
+func getLinks(c *http.Client, u url.URL) ([]url.URL, error) {
 	res, err := c.Get(u.String())
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("unable to GET url[%s]: %s", u.String(), err)
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return nil
+		return nil, fmt.Errorf("error status code[%d] on GET url[%s]", res.StatusCode, u.String())
 	}
 
-	links, _ := parser.ExtractLinks(res.Body)
+	links, err := parser.ExtractLinks(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing response body from GET url[%s]: %s", u.String(), err)
+	}
+
 	absLinks := make([]url.URL, len(links))
 
 	for i, link := range links {
@@ -162,7 +177,7 @@ func getLinks(c *http.Client, u url.URL) []url.URL {
 		absLinks[i] = link
 	}
 
-	return absLinks
+	return absLinks, nil
 }
 
 func newUniquenessFilter() func([]url.URL) []url.URL {
