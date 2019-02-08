@@ -89,6 +89,7 @@ func scheduler(
 	pendingURLs := []url.URL{entrypoint}
 	pendingJobs := 0
 	filterByUniqueness := newUniquenessFilter(entrypoint)
+	filterResByUniqueness := newResUniquenessFilter()
 
 	for len(pendingURLs) > 0 || pendingJobs > 0 {
 
@@ -107,6 +108,7 @@ func scheduler(
 
 		results := filterBySameDomain(<-crawlResults)
 		results = filterSelfReferences(results)
+		results = filterResByUniqueness(results)
 		pendingJobs -= 1
 
 		for _, res := range results {
@@ -210,6 +212,23 @@ func makeLinkAbsolute(parent url.URL, link url.URL) url.URL {
 		link.Path = parent.Path + "/" + link.Path
 	}
 	return link
+}
+
+func newResUniquenessFilter() func([]Result) []Result {
+	seen := map[string]bool{}
+
+	return func(results []Result) []Result {
+		filtered := []Result{}
+		for _, res := range results {
+			restr := res.String()
+			if !seen[restr] {
+				filtered = append(filtered, res)
+				seen[restr] = true
+			}
+
+		}
+		return filtered
+	}
 }
 
 func newUniquenessFilter(entrypoint url.URL) func([]url.URL) []url.URL {
