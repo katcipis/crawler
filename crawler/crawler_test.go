@@ -36,11 +36,12 @@ func TestCrawlingMultipleLinks(t *testing.T) {
 		result(entrypoint, "/dir", "/dir/page3.txt"),
 	}
 
-	const maxConcurrency uint = 10
+	const maxConcurrency = 10
+	const wantCrawlingErrs = 3
 
 	for concurrency := uint(1); concurrency <= maxConcurrency; concurrency++ {
 		t.Run(fmt.Sprintf("Concurrency%d", concurrency), func(t *testing.T) {
-			testCrawler(t, entrypoint, concurrency, copyResults(want))
+			testCrawler(t, entrypoint, concurrency, copyResults(want), wantCrawlingErrs)
 		})
 	}
 }
@@ -50,8 +51,9 @@ func TestCrawlingEmptySite(t *testing.T) {
 	defer server.Close()
 
 	const concurrency = 5
+	const wantCrawlingErrs = 0
 
-	testCrawler(t, entrypoint, concurrency, []crawler.Result{})
+	testCrawler(t, entrypoint, concurrency, []crawler.Result{}, wantCrawlingErrs)
 }
 
 func TestCrawlerFailsToStartIfConcurrencyIsZero(t *testing.T) {
@@ -69,6 +71,7 @@ func testCrawler(
 	entrypoint url.URL,
 	concurrency uint,
 	want []crawler.Result,
+	wantErrs uint,
 ) {
 	t.Helper()
 
@@ -76,7 +79,7 @@ func testCrawler(
 	results, errs := crawler.Start(entrypoint, concurrency, timeout)
 
 	drainedErrs := make(chan struct{})
-	errsCount := 0
+	errsCount := uint(0)
 
 	go func() {
 		for range errs {
@@ -94,12 +97,15 @@ func testCrawler(
 		want = removeResult(t, want, got)
 	}
 
+	<-drainedErrs
+
 	if len(want) > 0 {
-		t.Fatalf("missing wanted results: %+v", want)
+		t.Errorf("missing wanted results: %+v", want)
 	}
 
-	<-drainedErrs
-	// TODO: check errsCount
+	if wantErrs != errsCount {
+		t.Fatalf("expected [%d] errors but got [%d] instead", wantErrs, errsCount)
+	}
 }
 
 func removeResult(t *testing.T, want []crawler.Result, got crawler.Result) []crawler.Result {
