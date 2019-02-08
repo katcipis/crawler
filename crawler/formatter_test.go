@@ -31,13 +31,15 @@ func TestTextSitemapFormatter(t *testing.T) {
 						Scheme: "http",
 					},
 					Link: url.URL{
-						Host:   "test/link",
+						Host:   "test",
+						Path:   "/link",
 						Scheme: "https",
 					},
 				},
 				{
 					Parent: url.URL{
-						Host:   "test/link",
+						Host:   "test",
+						Path:   "/link",
 						Scheme: "https",
 					},
 					Link: url.URL{
@@ -74,7 +76,7 @@ func testFormatter(t *testing.T, c FormatterTestCase, format crawler.Formatter) 
 
 		got := buffer.String()
 		if c.want != got {
-			t.Fatalf("want[%s] != got[%s]", c.want, got)
+			t.Fatalf("want:[%s] != got[%s]", c.want, got)
 		}
 	})
 }

@@ -17,6 +17,33 @@ type Formatter func(<-chan Result, io.Writer) error
 // following this specification:
 //
 // https://www.sitemaps.org/protocol.html
+//
+// No repeated URLs are going to be written on the sitemap.
+// The space complexity of this function is linear ( O(N) ) to
+// the amount of unique URLs found in the results.
 func FormatAsTextSitemap(res <-chan Result, w io.Writer) error {
+	seen := map[string]bool{}
+	first := true
+
+	write := func(s string) error {
+		if !seen[s] {
+			seen[s] = true
+			if first {
+				first = false
+			} else {
+				s = "\n" + s
+			}
+			_, err := w.Write([]byte(s))
+			return err
+		}
+		return nil
+	}
+
+	for r := range res {
+		// TODO check write error
+		write(r.Parent.String())
+		write(r.Link.String())
+	}
+
 	return nil
 }
