@@ -16,8 +16,8 @@ import (
 // 1 - entry point answers 500 ERROR
 
 func TestCrawlingMultipleLinks(t *testing.T) {
-	server, entrypoint := setupFileServer(t, "./testdata/fakesite")
-	defer server.Close()
+	entrypoint, teardown := setupFileServer(t, "./testdata/fakesite")
+	defer teardown()
 
 	want := []crawler.Result{
 		result(entrypoint, "", "/info.html"),
@@ -74,8 +74,8 @@ func TestCrawlingUnreachableSite(t *testing.T) {
 }
 
 func TestCrawlingEmptySite(t *testing.T) {
-	server, entrypoint := setupFileServer(t, "./testdata/emptysite")
-	defer server.Close()
+	entrypoint, teardown := setupFileServer(t, "./testdata/emptysite")
+	defer teardown()
 
 	const concurrency = 5
 	const wantCrawlingErrs = 0
@@ -110,8 +110,8 @@ func TestCrawlingRespectsPerRequestTimeout(t *testing.T) {
 }
 
 func TestCrawlerFailsToStartIfConcurrencyIsZero(t *testing.T) {
-	server, entrypoint := setupFileServer(t, "./testdata/emptysite")
-	defer server.Close()
+	entrypoint, teardown := setupFileServer(t, "./testdata/emptysite")
+	defer teardown()
 
 	res, errs := crawler.Start(entrypoint, 0, time.Minute)
 
@@ -207,11 +207,11 @@ func result(entrypoint url.URL, parent string, link string) crawler.Result {
 	}
 }
 
-func newServer(t *testing.T, h http.Handler) (*httptest.Server, url.URL) {
+func newServer(t *testing.T, h http.Handler) (url.URL, func()) {
 	server := httptest.NewServer(h)
 	url, err := url.Parse(server.URL)
 	fatalerr(t, err, "setting up server")
-	return server, *url
+	return *url, server.Close
 }
 
 func setupHangingServer(t *testing.T, hangtime time.Duration) (url.URL, func()) {
@@ -220,16 +220,16 @@ func setupHangingServer(t *testing.T, hangtime time.Duration) (url.URL, func()) 
 		<-ctx.Done()
 		w.WriteHeader(http.StatusOK)
 	})
-	server, entrypoint := newServer(t, handler)
+	entrypoint, teardown := newServer(t, handler)
 	return entrypoint, func() {
 		// WHY: hanging server Close will block while all pending requests are answered
 		//      This way we wait for hangtime or for the test to cancel/close the server
 		cancel()
-		server.Close()
+		teardown()
 	}
 }
 
-func setupFileServer(t *testing.T, dir string) (*httptest.Server, url.URL) {
+func setupFileServer(t *testing.T, dir string) (url.URL, func()) {
 	handler := http.FileServer(http.Dir(dir))
 	return newServer(t, handler)
 }
