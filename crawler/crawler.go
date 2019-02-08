@@ -95,7 +95,6 @@ func scheduler(
 
 		jobsToSend := pendingURLs
 		pendingJobs += len(jobsToSend)
-		pendingURLs = nil
 
 		go func() {
 			// WHY: create goroutine to avoid deadlock between
