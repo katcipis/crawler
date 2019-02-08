@@ -46,6 +46,21 @@ func TestCrawlingMultipleLinks(t *testing.T) {
 	}
 }
 
+func TestCrawlingUnreachableSite(t *testing.T) {
+	const concurrency = 5
+	const wantCrawlingErrs = 1
+
+	testCrawler(
+		t,
+		url.URL{
+			Scheme: "http",
+			Host:   "unreachable.com.io.it",
+		},
+		concurrency, []crawler.Result{},
+		wantCrawlingErrs,
+	)
+}
+
 func TestCrawlingEmptySite(t *testing.T) {
 	server, entrypoint := setupFileServer(t, "./testdata/emptysite")
 	defer server.Close()
