@@ -15,12 +15,14 @@ import (
 
 func TestCrawlingWebsites(t *testing.T) {
 
-	const timeout = 30 * time.Second
+	const timeout = 20 * time.Second
 	const reqTimeout = 5 * time.Second
 	const concurrency = 4
 
 	sites := []string{
 		"https://google.com",
+		"https://bing.com",
+		"https://monzo.com",
 	}
 
 	for _, site := range sites {
@@ -48,8 +50,18 @@ func TestCrawlingWebsites(t *testing.T) {
 			}
 		}
 
+		seen := map[string]bool{}
+		checkRepeated := func(res crawler.Result) {
+			restr := res.String()
+			if seen[restr] {
+				t.Fatalf("duplicated result: [%s]", restr)
+			}
+			seen[restr] = true
+		}
+
 		linksCount := 0
 		for res := range results {
+			checkRepeated(res)
 			checkDomain(res.Parent)
 			checkDomain(res.Link)
 			linksCount += 1

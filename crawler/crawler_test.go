@@ -35,6 +35,7 @@ func TestCrawlingMultipleLinks(t *testing.T) {
 		result(entrypoint, "/dir", "/dir/page1.html"),
 		result(entrypoint, "/dir", "/dir/page2.html"),
 		result(entrypoint, "/dir", "/dir/page3.txt"),
+		result(entrypoint, "/dir/page1.html", ""),
 	}
 
 	const maxConcurrency = 10
