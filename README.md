@@ -1,3 +1,19 @@
+<!-- mdtocstart -->
+
+# Table of Contents
+
+- [crawler](#crawler)
+- [Dependencies](#dependencies)
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+- [Sitemap Formatters](#sitemap-formatters)
+- [Build](#build)
+- [Testing](#testing)
+- [Coverage](#coverage)
+- [Static Analysis](#static-analysis)
+
+<!-- mdtocend -->
+
 # crawler
 
 This is a simple single domain crawler.
@@ -21,6 +37,7 @@ And you should be able to run any of the commands documented here.
 If you want to build and run tests directly in your host you
 must install [Go](https://golang.org/) >= 1.11.
 
+
 # Installation
 
 If you have Go >= 1.11 installed you can run:
@@ -28,6 +45,24 @@ If you have Go >= 1.11 installed you can run:
 ```
 go get github.com/katcipis/crawler/cmd/crawler
 ```
+
+If not check the [Build](#build) section.
+
+
+# Build
+
+Run:
+
+```
+make
+```
+
+And you should be able to run the crawler:
+
+```
+./cmd/crawler
+```
+
 
 # Basic Usage
 
@@ -75,19 +110,6 @@ The **graphviz** formatter will produce an graphviz file with
 the full graph of the site which can be used to generate
 a graphical representation of the sitemap.
 
-# Build
-
-Run:
-
-```
-make
-```
-
-And you should be able to run the crawler:
-
-```
-./cmd/crawler
-```
 
 # Testing
 
