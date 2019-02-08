@@ -1,6 +1,7 @@
 package crawler_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -38,10 +39,18 @@ func TestCrawlingMultipleLinks(t *testing.T) {
 
 	const maxConcurrency = 10
 	const wantCrawlingErrs = 3
+	const timeout = time.Minute
 
 	for concurrency := uint(1); concurrency <= maxConcurrency; concurrency++ {
 		t.Run(fmt.Sprintf("Concurrency%d", concurrency), func(t *testing.T) {
-			testCrawler(t, entrypoint, concurrency, copyResults(want), wantCrawlingErrs)
+			testCrawler(
+				t,
+				entrypoint,
+				concurrency,
+				timeout,
+				copyResults(want),
+				wantCrawlingErrs,
+			)
 		})
 	}
 }
@@ -49,6 +58,7 @@ func TestCrawlingMultipleLinks(t *testing.T) {
 func TestCrawlingUnreachableSite(t *testing.T) {
 	const concurrency = 5
 	const wantCrawlingErrs = 1
+	const timeout = time.Minute
 
 	testCrawler(
 		t,
@@ -56,7 +66,9 @@ func TestCrawlingUnreachableSite(t *testing.T) {
 			Scheme: "http",
 			Host:   "unreachable.com.io.it",
 		},
-		concurrency, []crawler.Result{},
+		concurrency,
+		timeout,
+		[]crawler.Result{},
 		wantCrawlingErrs,
 	)
 }
@@ -67,8 +79,34 @@ func TestCrawlingEmptySite(t *testing.T) {
 
 	const concurrency = 5
 	const wantCrawlingErrs = 0
+	const timeout = time.Minute
 
-	testCrawler(t, entrypoint, concurrency, []crawler.Result{}, wantCrawlingErrs)
+	testCrawler(
+		t,
+		entrypoint,
+		concurrency,
+		timeout,
+		[]crawler.Result{},
+		wantCrawlingErrs,
+	)
+}
+
+func TestCrawlingRespectsPerRequestTimeout(t *testing.T) {
+	entrypoint, teardown := setupHangingServer(t, time.Hour)
+	defer teardown()
+
+	const concurrency = 5
+	const wantCrawlingErrs = 1
+	const timeout = time.Millisecond
+
+	testCrawler(
+		t,
+		entrypoint,
+		concurrency,
+		timeout,
+		[]crawler.Result{},
+		wantCrawlingErrs,
+	)
 }
 
 func TestCrawlerFailsToStartIfConcurrencyIsZero(t *testing.T) {
@@ -99,12 +137,12 @@ func testCrawler(
 	t *testing.T,
 	entrypoint url.URL,
 	concurrency uint,
+	timeout time.Duration,
 	want []crawler.Result,
 	wantErrs uint,
 ) {
 	t.Helper()
 
-	timeout := time.Minute
 	results, errs := crawler.Start(entrypoint, concurrency, timeout)
 
 	drainedErrs := make(chan struct{})
@@ -169,13 +207,31 @@ func result(entrypoint url.URL, parent string, link string) crawler.Result {
 	}
 }
 
-func setupFileServer(t *testing.T, dir string) (*httptest.Server, url.URL) {
-	handler := http.FileServer(http.Dir(dir))
-	server := httptest.NewServer(handler)
+func newServer(t *testing.T, h http.Handler) (*httptest.Server, url.URL) {
+	server := httptest.NewServer(h)
 	url, err := url.Parse(server.URL)
-
 	fatalerr(t, err, "setting up server")
 	return server, *url
+}
+
+func setupHangingServer(t *testing.T, hangtime time.Duration) (url.URL, func()) {
+	ctx, cancel := context.WithTimeout(context.Background(), hangtime)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-ctx.Done()
+		w.WriteHeader(http.StatusOK)
+	})
+	server, entrypoint := newServer(t, handler)
+	return entrypoint, func() {
+		// WHY: hanging server Close will block while all pending requests are answered
+		//      This way we wait for hangtime or for the test to cancel/close the server
+		cancel()
+		server.Close()
+	}
+}
+
+func setupFileServer(t *testing.T, dir string) (*httptest.Server, url.URL) {
+	handler := http.FileServer(http.Dir(dir))
+	return newServer(t, handler)
 }
 
 func fatalerr(t *testing.T, err error, op string) {
