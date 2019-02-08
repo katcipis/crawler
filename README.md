@@ -88,7 +88,7 @@ make graph url=<entrypoint>
 
 And it will generate a PNG file with the graphical representation
 of the sitemap and open it using the default application in your
-system to display images.
+system to display images and will log the erros on a errors.log file.
 
 
 # Sitemap Formatters

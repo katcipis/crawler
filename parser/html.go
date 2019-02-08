@@ -47,6 +47,10 @@ func extractURL(linkNode *html.Node) (url.URL, bool) {
 			if err != nil {
 				return url.URL{}, false
 			}
+			// WHY: Got some empty URLs being parsed on wikipedia.org
+			if u.String() == "" {
+				return url.URL{}, false
+			}
 			return *u, true
 		}
 	}
