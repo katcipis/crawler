@@ -10,7 +10,7 @@ shell: image
 	$(run) sh
 
 check: image
-	$(run) go test -race -coverprofile=$(cov) ./...
+	$(run) go test -timeout 10s -race -coverprofile=$(cov) ./...
 
 coverage: check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)

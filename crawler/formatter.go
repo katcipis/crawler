@@ -1,0 +1,22 @@
+package crawler
+
+import "io"
+
+// Formatter is a function that given a channel of crawling results
+// will write the results to the given writer according to a specific format
+//
+// The formatter will only return after draining the results channel
+// and having written all the formatted data.
+//
+// If there is an error writing the formatted results an error is returned,
+// otherwise the error will be nil.
+type Formatter func(<-chan Result, io.Writer) error
+
+// FormatAsTextSitemap will drain the given Result channel and
+// write then in the given writer formatted as a text sitemap
+// following this specification:
+//
+// https://www.sitemaps.org/protocol.html
+func FormatAsTextSitemap(res <-chan Result, w io.Writer) error {
+	return nil
+}
