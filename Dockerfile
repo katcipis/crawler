@@ -1,7 +1,4 @@
-FROM golang:1.11.5-alpine3.8
-
-RUN apk update && \
-    apk add git gcc musl-dev
+FROM golang:1.11.5-stretch
 
 ENV GO111MODULE=on
 
