@@ -5,6 +5,9 @@ Given a URL it will crawl all pages within the domain name of the URL
 and send a [sitemap](https://www.sitemaps.org/protocol.html)
 in text format to the crawler stdout.
 
+Errors found during the crawling will be sent to stderr.
+Other formats are provided besides the basic text sitemap.
+
 
 # Dependencies
 
