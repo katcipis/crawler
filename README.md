@@ -56,13 +56,6 @@ To run the tests:
 make check
 ```
 
-And to run integration tests (non deterministic with dependencies
-on services on the internet):
-
-```
-make check-integration
-```
-
 # Coverage
 
 To generate and view the coverage report:
