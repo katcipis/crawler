@@ -28,6 +28,5 @@ static-analysis: image
 	$(run) golangci-lint run ./...
 
 graph: build
-	$(run) ./cmd/crawler/crawler -url $(url) -format graphviz 1> sitemap.dot 2> errors.log && \
-	$(run) dot sitemap.dot -Tpng > sitemap.png && \
-	xdg-open sitemap.png
+	$(run) ./tools/graph $(url)
+	xdg-open sitemap.dot.png
