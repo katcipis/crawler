@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"strings"
 )
 
 // Formatter is a function that given a channel of crawling results
@@ -69,18 +70,9 @@ func FormatAsGraphvizSitemap(res <-chan Result, w io.Writer) error {
 		return err
 	}
 
-	seen := map[string]bool{}
 	for r := range res {
-		originNode := nodeName(r.Parent)
-		targetNode := nodeName(r.Link)
-
-		linkedNodes := fmt.Sprintf(`"%s" -> "%s"`, originNode, targetNode) + "\n"
-		if seen[linkedNodes] {
-			continue
-		}
-
-		seen[linkedNodes] = true
-		_, err := w.Write([]byte(linkedNodes))
+		linkedNodes := linkRepr(r)
+		_, err := w.Write([]byte(linkedNodes + "\n"))
 		if err != nil {
 			return err
 		}
@@ -90,9 +82,20 @@ func FormatAsGraphvizSitemap(res <-chan Result, w io.Writer) error {
 	return err
 }
 
+func linkRepr(r Result) string {
+	originNode := nodeName(r.Parent)
+	targetNode := nodeName(r.Link)
+
+	return fmt.Sprintf(`"%s" -> "%s"`, originNode, targetNode)
+}
+
 func nodeName(u url.URL) string {
-	if u.Path == "" || u.Path == "/" {
-		return u.Host
+	ustr := strings.TrimPrefix(u.String(), "http://")
+	ustr = strings.TrimPrefix(ustr, "https://")
+
+	if ustr == u.Host {
+		return ustr
 	}
-	return u.Path
+
+	return strings.TrimPrefix(ustr, u.Host)
 }
