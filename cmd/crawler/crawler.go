@@ -11,9 +11,14 @@ import (
 	"github.com/katcipis/crawler/crawler"
 )
 
+var formatters map[string]crawler.Formatter = map[string]crawler.Formatter{
+	"text":     crawler.FormatAsTextSitemap,
+	"graphviz": crawler.FormatAsGraphvizSitemap,
+}
+
 func main() {
 	const defaultConcurrency = 4
-	const defaultFormatter = "sitemap"
+	const defaultFormat = "text"
 	const defaultRequestTimeout = time.Minute
 	const defaultTimeout = 0
 
@@ -50,7 +55,7 @@ func main() {
 	flag.StringVar(
 		&format,
 		"format",
-		"",
+		defaultFormat,
 		fmt.Sprintf("format of the output, available formats: %s", availableFormats()),
 	)
 
@@ -64,7 +69,7 @@ func main() {
 
 	err := startCrawler(url, concurrency, timeout, reqTimeout, format)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "\ncrawling failed:%s", err)
+		fmt.Fprintf(os.Stderr, "\ncrawling failed:%s\n", err)
 		os.Exit(1)
 	}
 }
@@ -81,7 +86,16 @@ func startCrawler(
 		return fmt.Errorf("error[%s] parsing entrypoint URL[%s]", err, ep)
 	}
 
+	if entrypoint.Scheme == "" {
+		entrypoint.Scheme = "http"
+		entrypoint.Host = entrypoint.Path
+		entrypoint.Path = ""
+	}
+
 	formatter, err := getFormatter(format)
+	if err != nil {
+		return err
+	}
 
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -107,9 +121,17 @@ func drainErrors(errs <-chan error) {
 }
 
 func getFormatter(name string) (crawler.Formatter, error) {
-	return crawler.FormatAsTextSitemap, nil
+	formatter, ok := formatters[name]
+	if !ok {
+		return nil, fmt.Errorf("unknown formatter:[%s]", name)
+	}
+	return formatter, nil
 }
 
 func availableFormats() []string {
-	return []string{"sitemap"}
+	fmts := []string{}
+	for f := range formatters {
+		fmts = append(fmts, f)
+	}
+	return fmts
 }

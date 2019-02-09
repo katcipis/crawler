@@ -79,13 +79,6 @@ errors to a log:
 ./cmd/crawler/crawler -url https://google.com -timeout 60s 2> errors.log
 ```
 
-
-For more options run:
-
-```
-./cmd/crawler/crawler -help
-```
-
 There is a make target that makes it easy to visualize the sitemap
 as a graph. To use it just run:
 
