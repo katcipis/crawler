@@ -17,7 +17,7 @@ var formatters map[string]crawler.Formatter = map[string]crawler.Formatter{
 }
 
 func main() {
-	const defaultConcurrency = 4
+	const defaultConcurrency = 10
 	const defaultFormat = "text"
 	const defaultRequestTimeout = time.Minute
 	const defaultTimeout = 0
