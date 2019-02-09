@@ -204,12 +204,11 @@ func makeLinkAbsolute(parent url.URL, link url.URL) url.URL {
 	if link.Path == "" {
 		return link
 	}
+	if link.Path[0] != '/' {
+		link.Path = path.Clean(parent.Path + "/" + link.Path)
+	}
 	if link.Path == "/" {
 		link.Path = ""
-		return link
-	}
-	if link.Path[0] != '/' {
-		link.Path = path.Clean(path.Dir(parent.Path) + "/" + link.Path)
 	}
 	return link
 }
