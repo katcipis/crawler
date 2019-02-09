@@ -2,19 +2,19 @@
 
 # Table of Contents
 
-- [crawler](#crawler)
+- [Introduction](#introduction)
 - [Dependencies](#dependencies)
 - [Installation](#installation)
+- [Build](#build)
 - [Basic Usage](#basic-usage)
 - [Sitemap Formatters](#sitemap-formatters)
-- [Build](#build)
 - [Testing](#testing)
 - [Coverage](#coverage)
 - [Static Analysis](#static-analysis)
 
 <!-- mdtocend -->
 
-# crawler
+# Introduction
 
 This is a simple single domain crawler.
 Given a URL it will crawl all pages within the domain name of the URL
