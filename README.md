@@ -60,7 +60,7 @@ make
 And you should be able to run the crawler:
 
 ```
-./cmd/crawler
+./cmd/crawler/crawler
 ```
 
 
@@ -76,11 +76,17 @@ Getting a textual sitemap from google at stdout and writing
 errors to a log:
 
 ```
-./cmd/crawler/crawler -url https://google.com -timeout 60s 2> errors.log
+./cmd/crawler/crawler -url https://google.com 2> errors.log
 ```
 
-There is a make target that makes it easy to visualize the sitemap
-as a graph. To use it just run:
+For a graphviz sitemap directly at stdout:
+
+```
+./cmd/crawler/crawler -url https://google.com -format graphviz 2> errors.log
+```
+
+There is a make target that makes it easy to generate and visualize
+the sitemap as a graph. To use it just run:
 
 ```
 make graph url=<entrypoint>
@@ -88,7 +94,7 @@ make graph url=<entrypoint>
 
 And it will generate a PNG file with the graphical representation
 of the sitemap and open it using the default application in your
-system to display images and will log the erros on a errors.log file.
+system to display images.
 
 
 # Sitemap Formatters
@@ -96,15 +102,8 @@ system to display images and will log the erros on a errors.log file.
 There are multiple formats to represent a sitemap. The default
 sitemap specification does not show the relation between links.
 
-To make that easier to check there is two extra outputs besides
-the default textual sitemap:
-
-* linked
-* graphviz
-
-The **linked** formatter is pretty much like a sitemap with the
-exception that is shows pairs of URLs showing from where a URL
-has been reached.
+To make that easier to check there is an extra output besides
+the default **text** sitemap which is the **graphviz** output.
 
 The **graphviz** formatter will produce an graphviz file with
 the full graph of the site which can be used to generate
