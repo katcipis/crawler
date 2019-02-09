@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/katcipis/crawler/parser"
@@ -88,11 +87,14 @@ func scheduler(
 	}
 
 	pendingURLs := []url.URL{entrypoint}
-	filterByUniqueness := newUniquenessFilter()
+	pendingJobs := 0
+	filterByUniqueness := newUniquenessFilter(entrypoint)
+	filterResByUniqueness := newResUniquenessFilter()
 
-	for len(pendingURLs) > 0 {
+	for len(pendingURLs) > 0 || pendingJobs > 0 {
+
 		jobsToSend := pendingURLs
-		jobsSent := len(jobsToSend)
+		pendingJobs += len(jobsToSend)
 
 		go func() {
 			// WHY: create goroutine to avoid deadlock between
@@ -103,17 +105,16 @@ func scheduler(
 			}
 		}()
 
-		pendingURLs = nil
-		for i := 0; i < jobsSent; i++ {
-			results := filterBySameDomain(<-crawlResults)
+		results := filterBySameDomain(<-crawlResults)
+		results = filterSelfReferences(results)
+		results = filterResByUniqueness(results)
+		pendingJobs -= 1
 
-			for _, res := range results {
-				filtered <- res
-			}
-
-			pendingURLs = append(pendingURLs,
-				filterByUniqueness(extractLinks(results))...)
+		for _, res := range results {
+			filtered <- res
 		}
+
+		pendingURLs = filterByUniqueness(extractLinks(results))
 	}
 }
 
@@ -186,38 +187,78 @@ func getLinks(ctx context.Context, c *http.Client, u url.URL) ([]url.URL, error)
 	absLinks := make([]url.URL, len(links))
 
 	for i, link := range links {
-		if link.Host == "" {
-			link.Host = u.Host
-		}
-		if link.Scheme == "" {
-			link.Scheme = u.Scheme
-		}
-		if !strings.HasPrefix(link.Path, "/") {
-			link.Path = u.Path + "/" + link.Path
-		}
-		absLinks[i] = link
+		absLinks[i] = makeLinkAbsolute(u, link)
 	}
 
 	return absLinks, nil
 }
 
-func newUniquenessFilter() func([]url.URL) []url.URL {
+func makeLinkAbsolute(parent url.URL, link url.URL) url.URL {
+	if link.Host == "" {
+		link.Host = parent.Host
+	}
+	if link.Scheme == "" {
+		link.Scheme = parent.Scheme
+	}
+	if link.Path == "" {
+		return link
+	}
+	if link.Path == "/" {
+		link.Path = ""
+		return link
+	}
+	if link.Path[0] != '/' {
+		link.Path = parent.Path + "/" + link.Path
+	}
+	return link
+}
+
+func newResUniquenessFilter() func([]Result) []Result {
 	seen := map[string]bool{}
+
+	return func(results []Result) []Result {
+		filtered := []Result{}
+		for _, res := range results {
+			restr := res.String()
+			if !seen[restr] {
+				filtered = append(filtered, res)
+				seen[restr] = true
+			}
+
+		}
+		return filtered
+	}
+}
+
+func newUniquenessFilter(entrypoint url.URL) func([]url.URL) []url.URL {
+	seen := map[string]bool{
+		entrypoint.String(): true,
+	}
 
 	return func(urls []url.URL) []url.URL {
 		filtered := []url.URL{}
 		for _, u := range urls {
 			ustr := u.String()
-
-			if seen[ustr] {
-				continue
+			if !seen[ustr] {
+				filtered = append(filtered, u)
+				seen[ustr] = true
 			}
 
-			filtered = append(filtered, u)
-			seen[ustr] = true
 		}
 		return filtered
 	}
+}
+
+func filterSelfReferences(results []Result) []Result {
+	filtered := []Result{}
+
+	for _, res := range results {
+		if res.Link.String() != res.Parent.String() {
+			filtered = append(filtered, res)
+		}
+	}
+
+	return filtered
 }
 
 func filterBySameDomain(results []Result) []Result {

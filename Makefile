@@ -17,6 +17,9 @@ build: image
 check: image
 	$(run) go test -timeout 60s -race -coverprofile=$(cov) ./...
 
+check-integration: image
+	$(run) go test -timeout 120s -race -coverprofile=$(cov) -tags=integration ./...
+
 coverage: check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)
 	xdg-open coverage.html
