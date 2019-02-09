@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"time"
 
 	"github.com/katcipis/crawler/parser"
@@ -208,7 +209,7 @@ func makeLinkAbsolute(parent url.URL, link url.URL) url.URL {
 		return link
 	}
 	if link.Path[0] != '/' {
-		link.Path = parent.Path + "/" + link.Path
+		link.Path = path.Clean(path.Dir(parent.Path) + "/" + link.Path)
 	}
 	return link
 }

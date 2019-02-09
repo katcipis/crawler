@@ -72,6 +72,13 @@ After building the crawler just run:
 ./cmd/crawler/crawler -url <url>
 ```
 
+Getting a textual sitemap from google at stdout and writing
+errors to a log:
+
+```
+./cmd/crawler/crawler -url https://google.com -timeout 60s 2> errors.log
+```
+
 
 For more options run:
 
