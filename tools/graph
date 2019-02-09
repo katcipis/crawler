@@ -4,4 +4,4 @@ set -o errexit
 set -o nounset
 
 ./cmd/crawler/crawler -url ${1} -format graphviz 1>sitemap.dot 2>errors.log
-dot sitemap.dot -Tpng -O
+sfdp -x -Goverlap=scale -Tpng -O sitemap.dot
