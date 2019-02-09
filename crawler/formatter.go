@@ -3,6 +3,7 @@ package crawler
 import (
 	"fmt"
 	"io"
+	"net/url"
 )
 
 // Formatter is a function that given a channel of crawling results
@@ -55,4 +56,43 @@ func FormatAsTextSitemap(res <-chan Result, w io.Writer) error {
 	}
 
 	return nil
+}
+
+// FormatAsGraphvizSitemap will drain the given Result channel and
+// write then in the given writer formatted as a graphviz dot file.
+//
+// The space complexity of this function is linear ( O(N) ) to
+// the amount of unique URLs found in the results.
+func FormatAsGraphvizSitemap(res <-chan Result, w io.Writer) error {
+	_, err := w.Write([]byte("digraph {\n"))
+	if err != nil {
+		return err
+	}
+
+	seen := map[string]bool{}
+	for r := range res {
+		originNode := nodeName(r.Parent)
+		targetNode := nodeName(r.Link)
+
+		linkedNodes := fmt.Sprintf(`"%s" -> "%s"`, originNode, targetNode) + "\n"
+		if seen[linkedNodes] {
+			continue
+		}
+
+		seen[linkedNodes] = true
+		_, err := w.Write([]byte(linkedNodes))
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = w.Write([]byte("}"))
+	return err
+}
+
+func nodeName(u url.URL) string {
+	if u.Path == "" || u.Path == "/" {
+		return u.Host
+	}
+	return u.Path
 }

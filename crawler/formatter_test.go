@@ -69,6 +69,10 @@ func TestOnWriteErrorFormatterFails(t *testing.T) {
 			name:   "TextSitemap",
 			format: crawler.FormatAsTextSitemap,
 		},
+		{
+			name:   "GraphvizSitemap",
+			format: crawler.FormatAsGraphvizSitemap,
+		},
 	}
 
 	for _, c := range cases {

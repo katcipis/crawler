@@ -26,3 +26,7 @@ coverage: check
 
 static-analysis: image
 	$(run) golangci-lint run ./...
+
+graph: build
+	$(run) ./tools/graph $(url)
+	xdg-open sitemap.dot.png
