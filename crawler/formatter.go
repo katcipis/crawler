@@ -69,11 +69,18 @@ func FormatAsGraphvizSitemap(res <-chan Result, w io.Writer) error {
 		return err
 	}
 
+	seen := map[string]bool{}
 	for r := range res {
 		originNode := nodeName(r.Parent)
 		targetNode := nodeName(r.Link)
 
-		_, err := w.Write([]byte(fmt.Sprintf(`"%s" -> "%s"`, originNode, targetNode) + "\n"))
+		linkedNodes := fmt.Sprintf(`"%s" -> "%s"`, originNode, targetNode) + "\n"
+		if seen[linkedNodes] {
+			continue
+		}
+
+		seen[linkedNodes] = true
+		_, err := w.Write([]byte(linkedNodes))
 		if err != nil {
 			return err
 		}
