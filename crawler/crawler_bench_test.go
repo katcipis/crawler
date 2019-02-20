@@ -2,6 +2,7 @@ package crawler_test
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"testing"
 	"time"
@@ -11,9 +12,11 @@ import (
 
 func BenchmarkCrawler(b *testing.B) {
 
-	const timeout = 20 * time.Second
-	const reqTimeout = 5 * time.Second
-	const concurrency = 4
+	const timeout = time.Hour
+	const reqTimeout = 10 * time.Second
+	const maxConcurrency = 20
+	const startConcurrency = 1
+	const step = 2
 	const site = "https://monzo.com"
 
 	entrypoint, err := url.Parse(site)
@@ -21,25 +24,39 @@ func BenchmarkCrawler(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	for i := 0; i < b.N; i++ {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
+	for concurrency := uint(startConcurrency); concurrency <= maxConcurrency; concurrency += step {
 
-		results, errs := crawler.Start(ctx, *entrypoint, concurrency, reqTimeout)
+		b.Run(fmt.Sprintf("Concurrency%d", concurrency), func(b *testing.B) {
 
-		go func() {
-			for range errs {
+			for i := 0; i < b.N; i++ {
+				ctx, cancel := context.WithTimeout(
+					context.Background(),
+					timeout,
+				)
+				defer cancel()
+
+				results, errs := crawler.Start(
+					ctx,
+					*entrypoint,
+					concurrency,
+					reqTimeout,
+				)
+
+				go func() {
+					for range errs {
+					}
+				}()
+
+				linksCount := 0
+
+				for range results {
+					linksCount += 1
+				}
+
+				if linksCount == 0 {
+					b.Fatalf("expected at least one link from [%s]", site)
+				}
 			}
-		}()
-
-		linksCount := 0
-
-		for range results {
-			linksCount += 1
-		}
-
-		if linksCount == 0 {
-			b.Fatalf("expected at least one link from [%s]", site)
-		}
+		})
 	}
 }

@@ -20,6 +20,9 @@ check: image
 check-integration: image
 	$(run) go test -timeout 120s -race -coverprofile=$(cov) -tags=integration ./...
 
+benchmark: image
+	$(run) go test ./... -timeout 1h -bench .
+
 coverage: check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)
 	xdg-open coverage.html
