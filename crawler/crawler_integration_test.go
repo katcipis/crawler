@@ -15,17 +15,17 @@ import (
 
 func TestCrawlingWebsites(t *testing.T) {
 
-	const timeout = 20 * time.Second
+	const timeout = 30 * time.Second
 	const reqTimeout = 5 * time.Second
-	const concurrency = 4
+	const concurrency = 30
 
-	sites := []string{
-		"https://google.com",
-		"https://bing.com",
-		"https://monzo.com",
+	sites := map[string]uint{
+		"https://google.com": 200,
+		"https://bing.com":   11000,
+		"https://monzo.com":  35000,
 	}
 
-	for _, site := range sites {
+	for site, minLinks := range sites {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
@@ -59,7 +59,7 @@ func TestCrawlingWebsites(t *testing.T) {
 			seen[restr] = true
 		}
 
-		linksCount := 0
+		linksCount := uint(0)
 		for res := range results {
 			checkDomain(res.Parent)
 			checkDomain(res.Link)
@@ -67,8 +67,8 @@ func TestCrawlingWebsites(t *testing.T) {
 			linksCount += 1
 		}
 
-		if linksCount == 0 {
-			t.Fatalf("expected at least one link from [%s]", site)
+		if linksCount < minLinks {
+			t.Fatalf("expected at least [%d] links from [%s] and got[%d]", minLinks, site, linksCount)
 		}
 	}
 }
