@@ -21,7 +21,7 @@ check-integration: image
 	$(run) go test -timeout 120s -race -coverprofile=$(cov) -tags=integration ./...
 
 benchmark: image
-	$(run) go test ./... -timeout 1h -bench .
+	$(run) go test ./... -run=NONE -timeout 1h -bench=.
 
 coverage: check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)
