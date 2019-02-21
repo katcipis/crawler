@@ -14,7 +14,7 @@ func BenchmarkCrawler(b *testing.B) {
 
 	const timeout = time.Hour
 	const reqTimeout = 10 * time.Second
-	const maxConcurrency = 30
+	const maxConcurrency = 60
 	const startConcurrency = 1
 	const step = 3
 	const site = "https://monzo.com"
