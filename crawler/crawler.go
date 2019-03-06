@@ -49,8 +49,8 @@ func Start(
 	timeout time.Duration,
 ) (<-chan Result, <-chan error) {
 
-	res := make(chan Result, concurrency)
-	errs := make(chan error, concurrency)
+	res := make(chan Result)
+	errs := make(chan error)
 
 	if concurrency == 0 {
 		go func() {
@@ -77,10 +77,10 @@ func scheduler(
 	defer close(filtered)
 	defer close(errs)
 
-	crawlResults := make(chan []Result, concurrency)
+	crawlResults := make(chan []Result)
 	defer close(crawlResults)
 
-	jobs := make(chan url.URL, concurrency)
+	jobs := make(chan url.URL)
 	defer close(jobs)
 
 	for i := uint(0); i < concurrency; i++ {
