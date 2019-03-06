@@ -94,28 +94,37 @@ func scheduler(
 
 	for len(pendingURLs) > 0 || pendingJobs > 0 {
 
-		jobsToSend := pendingURLs
-		pendingJobs += len(jobsToSend)
+		var j chan<- url.URL
+		var pendingURL url.URL
 
-		go func() {
-			// WHY: create goroutine to avoid deadlock between
-			// sending jobs to crawlers
-			// and crawlers sending results back.
-			for _, job := range jobsToSend {
-				jobs <- job
-			}
-		}()
-
-		results := filterBySameDomain(<-crawlResults)
-		results = filterSelfReferences(results)
-		results = filterResByUniqueness(results)
-		pendingJobs -= 1
-
-		for _, res := range results {
-			filtered <- res
+		if len(pendingURLs) > 0 {
+			j = jobs
+			pendingURL = pendingURLs[0]
 		}
 
-		pendingURLs = filterByUniqueness(extractLinks(results))
+		select {
+		case j <- pendingURL:
+			{
+				pendingURLs = pendingURLs[1:]
+				pendingJobs += 1
+			}
+		case r := <-crawlResults:
+			{
+				results := filterBySameDomain(r)
+				results = filterSelfReferences(results)
+				results = filterResByUniqueness(results)
+				pendingJobs -= 1
+
+				for _, res := range results {
+					filtered <- res
+				}
+
+				pendingURLs = append(
+					pendingURLs,
+					filterByUniqueness(extractLinks(results))...)
+			}
+		}
+
 	}
 }
 
