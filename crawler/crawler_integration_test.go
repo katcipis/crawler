@@ -21,8 +21,8 @@ func TestCrawlingWebsites(t *testing.T) {
 
 	sites := map[string]uint{
 		"https://google.com": 200,
-		"https://bing.com":   11000,
-		"https://monzo.com":  35000,
+		"https://bing.com":   1000,
+		"https://monzo.com":  15000,
 	}
 
 	for site, minLinks := range sites {
